@@ -24,8 +24,7 @@ PACKAGE_ROOT = Path(__file__).resolve().parent
 def create_app(data_dir: str | Path | None = None) -> FastAPI:
     data_path = Path(data_dir or os.getenv("PLO_DATA_DIR", PACKAGE_ROOT / "data"))
     registry = TenantRegistry(data_path)
-    if os.getenv("PLO_DEMO_MODE", "1") == "1":
-        registry.create_tenant("demo", "Entreprise de démonstration")
+    registry.create_tenant("demo", "Entreprise de démonstration")
     repository = TenantRunRepository(registry)
     service = OptimizationService(OptimizationEngine(), repository, registry.list_vehicles)
 
@@ -44,18 +43,10 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             raise HTTPException(401, "Invalid or revoked API key")
         return tenant_id
 
-    def web_tenant(
-        x_tenant_id: Annotated[str, Header()] = "demo",
-        x_api_key: Annotated[str | None, Header()] = None,
-    ) -> str:
-        if x_tenant_id == "demo" and os.getenv("PLO_DEMO_MODE", "1") == "1":
-            return "demo"
-        if not x_api_key:
-            raise HTTPException(401, "X-API-Key is required outside demo mode")
-        resolved = registry.resolve_api_key(x_api_key)
-        if resolved != x_tenant_id:
-            raise HTTPException(403, "API key does not grant access to this tenant")
-        return x_tenant_id
+    def web_tenant() -> str:
+        # The bundled web interface is a local demonstrator. It always works in
+        # the demo workspace and must not require integration credentials.
+        return "demo"
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request) -> HTMLResponse:
