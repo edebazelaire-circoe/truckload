@@ -89,7 +89,7 @@ def export_pdf(run: dict[str, Any]) -> bytes:
         y -= 16
         pdf.setFont("Helvetica", 8)
         for p in plan["placements"]:
-            line = (f"{p['item_id']} | {p['destination']} | x={p['x_mm']} y={p['y_mm']} mm | "
+            line = (f"{p['item_id']} | {p['destination']} | x={p['x_mm']} y={p['y_mm']} z={p['z_mm']} mm | "
                     f"{p['actual_length_mm']}x{p['actual_width_mm']}x{p['actual_height_mm']} | {p['orientation_deg']}°")
             pdf.drawString(48, y, line[:145])
             y -= 11
