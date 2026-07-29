@@ -126,7 +126,7 @@
               </div>
             </div>
             <canvas id="viewer" width="1000" height="620" aria-label="Visualisation 3D du chargement"></canvas>
-            <div class="viewer-help">Glisser pour tourner · molette pour zoomer · cliquer sur un objet pour l’inspecter · grille de 500 mm</div>
+            <div class="viewer-help">Clic gauche + glisser pour déplacer · clic droit + glisser pour tourner · molette pour zoomer · clic gauche sur un objet pour l’inspecter · grille 3D de 500 mm</div>
           </div>
           <aside class="inspection-card">
             <h3>Inspection</h3>
@@ -152,5 +152,6 @@
   <footer>Les dimensions doivent être validées sur les fiches techniques, cartes grises et carrosseries réellement utilisées.</footer>
   <script>window.PLO_VEHICLES = {{ vehicles | tojson }};</script>
   <script src="/static/app.js?v={{ app_version }}-stacking1"></script>
+  <script src="/static/viewer-controls.js?v={{ app_version }}-viewer2"></script>
 </body>
 </html>
