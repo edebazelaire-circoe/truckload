@@ -70,17 +70,24 @@ def test_public_api_returns_only_best_solution_and_structured_status(tmp_path) -
     assert body["solutions"][0]["vehicle_plans"][0]["placements"]
 
 
-def test_history_cannot_be_read_with_another_tenant_key(tmp_path, monkeypatch) -> None:
+def test_web_routes_do_not_require_api_key_and_stay_in_demo_workspace(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("PLO_DEMO_MODE", "0")
     app = create_app(tmp_path); registry = app.state.registry
-    registry.create_tenant("alpha", "Alpha"); registry.create_tenant("beta", "Beta")
-    alpha_key = registry.issue_api_key("alpha"); beta_key = registry.issue_api_key("beta")
+    registry.create_tenant("alpha", "Alpha")
+    alpha_key = registry.issue_api_key("alpha")
     client = TestClient(app)
-    client.post("/v1/optimizations", json=payload(), headers={"X-API-Key": alpha_key})
-    denied = client.get("/api/history", headers={"X-Tenant-ID":"alpha", "X-API-Key":beta_key})
-    allowed = client.get("/api/history", headers={"X-Tenant-ID":"alpha", "X-API-Key":alpha_key})
-    assert denied.status_code == 403
-    assert allowed.status_code == 200 and len(allowed.json()) == 1
+
+    assert client.post("/v1/optimizations", json=payload()).status_code == 401
+    assert client.post("/v1/optimizations", json=payload(), headers={"X-API-Key": alpha_key}).status_code == 200
+
+    web_history = client.get("/api/history", headers={"X-Tenant-ID": "alpha", "X-API-Key": alpha_key})
+    assert web_history.status_code == 200
+    assert web_history.json() == []
+
+    vehicles = client.get("/api/vehicles")
+    assert vehicles.status_code == 200 and vehicles.json()
+    saved = client.post("/api/vehicles", json=vehicles.json()[0])
+    assert saved.status_code == 200
 
 
 def test_exports_preserve_all_placements(tmp_path) -> None:
