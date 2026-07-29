@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Pallet Loading Optimizer</title>
-  <link rel="stylesheet" href="/static/app.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/app.css?v={{ app_version }}-stacking1">
 </head>
 <body>
   <header class="topbar">
@@ -80,10 +80,13 @@
         <label>Marge de sécurité globale (mm)
           <input id="default-margin" type="number" min="0" value="0">
         </label>
+        <label class="check-setting">Empilage
+          <span class="check-row"><input id="stacking-allowed" type="checkbox">Autoriser l’empilage des palettes compatibles</span>
+        </label>
       </div>
 
       <div id="selected-vehicle-summary" class="vehicle-summary"></div>
-      <div class="hint">Convention LIFO: un ordre de livraison plus élevé signifie un déchargement plus tôt. Sans saisie particulière, la dernière ligne est donc la première accessible.</div>
+      <div class="hint">Convention LIFO: un ordre de livraison plus élevé signifie un déchargement plus tôt. L’empilage ne regroupe que des palettes de mêmes dimensions, poids, destination, ordre et contraintes, dans la limite de la hauteur du véhicule et de son ouverture.</div>
 
       <div class="table-wrap">
         <table id="cargo-table">
@@ -116,10 +119,14 @@
           <div class="viewer-card">
             <div class="viewer-toolbar">
               <div><strong id="viewer-title">Plan 3D</strong><span id="viewer-subtitle"></span></div>
-              <div class="viewer-actions"><select id="viewer-vehicle" aria-label="Véhicule affiché"></select><button id="reset-view" class="secondary small">Réinitialiser la vue</button></div>
+              <div class="viewer-actions">
+                <select id="viewer-vehicle" aria-label="Véhicule affiché"></select>
+                <button id="toggle-grid" class="secondary small" aria-pressed="false">Afficher la grille</button>
+                <button id="reset-view" class="secondary small">Réinitialiser la vue</button>
+              </div>
             </div>
             <canvas id="viewer" width="1000" height="620" aria-label="Visualisation 3D du chargement"></canvas>
-            <div class="viewer-help">Glisser pour tourner · cliquer sur un objet pour l’inspecter</div>
+            <div class="viewer-help">Glisser pour tourner · molette pour zoomer · cliquer sur un objet pour l’inspecter · grille de 500 mm</div>
           </div>
           <aside class="inspection-card">
             <h3>Inspection</h3>
@@ -144,6 +151,6 @@
 
   <footer>Les dimensions doivent être validées sur les fiches techniques, cartes grises et carrosseries réellement utilisées.</footer>
   <script>window.PLO_VEHICLES = {{ vehicles | tojson }};</script>
-  <script src="/static/app.js?v={{ app_version }}"></script>
+  <script src="/static/app.js?v={{ app_version }}-stacking1"></script>
 </body>
 </html>
