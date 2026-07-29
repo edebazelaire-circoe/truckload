@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pallet Loading Optimizer</title>
+  <link rel="stylesheet" href="/static/app.css?v={{ app_version }}">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">CIRCOE · V2 moteur de placement</div>
+      <h1>Pallet Loading Optimizer</h1>
+      <p>Optimisation physique du chargement, métrage linéaire et contrôle d’accessibilité.</p>
+    </div>
+    <div class="status-pill"><span></span>MaxRects + points extrêmes</div>
+  </header>
+
+  <nav class="tabs" aria-label="Navigation principale">
+    <button class="tab active" data-tab="vehicles">0. Véhicules</button>
+    <button class="tab" data-tab="data">1. Données</button>
+    <button class="tab" data-tab="results">2. Résultats</button>
+    <button class="tab" data-tab="history">3. Historique</button>
+  </nav>
+
+  <main>
+    <section id="tab-vehicles" class="panel tab-panel active">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Catalogue de flotte</div>
+          <h2>Configurer les dimensions intérieures des véhicules</h2>
+          <p class="section-intro">Ces valeurs sont utilisées directement par le moteur de rangement. Toute modification crée une nouvelle version du véhicule.</p>
+        </div>
+        <div class="import-box">
+          <button id="add-vehicle" class="secondary">+ Ajouter un véhicule</button>
+          <button id="reset-vehicles" class="secondary">Restaurer les modèles de démonstration</button>
+        </div>
+      </div>
+
+      <div class="table-wrap vehicle-table-wrap">
+        <table id="vehicle-table">
+          <thead><tr>
+            <th>Identifiant</th><th>Nom</th><th>Longueur int. (mm)</th><th>Largeur int. (mm)</th><th>Hauteur int. (mm)</th>
+            <th>Largeur LDM (mm)</th><th>Charge utile (kg)</th><th>Ouverture l. (mm)</th><th>Ouverture H. (mm)</th><th>Version</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="save-vehicles" class="primary">Enregistrer les véhicules</button>
+      </div>
+      <div id="vehicle-message" class="message hidden"></div>
+    </section>
+
+    <section id="tab-data" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Chargement</div>
+          <h2>Préparer le cas à optimiser</h2>
+        </div>
+        <div class="import-box">
+          <label class="file-button">Importer CSV/XLSX<input id="import-file" type="file" accept=".csv,.xlsx"></label>
+          <a href="/static/import-template.csv" download>Modèle CSV</a>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <label>Véhicule
+          <select id="vehicle-id"></select>
+        </label>
+        <label>Budget de calcul
+          <select id="budget-seconds"><option value="5">5 s</option><option value="15">15 s</option><option value="30" selected>30 s</option></select>
+        </label>
+        <label>Nombre maximal de véhicules
+          <input id="max-vehicles" type="number" min="1" max="10" value="5">
+        </label>
+        <label>Graine déterministe
+          <input id="seed" type="number" value="1">
+        </label>
+        <label>Marge de sécurité globale (mm)
+          <input id="default-margin" type="number" min="0" value="0">
+        </label>
+      </div>
+
+      <div id="selected-vehicle-summary" class="vehicle-summary"></div>
+      <div class="hint">Convention LIFO: un ordre de livraison plus élevé signifie un déchargement plus tôt. Sans saisie particulière, la dernière ligne est donc la première accessible.</div>
+
+      <div class="table-wrap">
+        <table id="cargo-table">
+          <thead><tr>
+            <th></th><th>Référence</th><th>Qté</th><th>Forme</th><th>L (mm)</th><th>l (mm)</th><th>H (mm)</th><th>Poids (kg)</th><th>Destination</th><th>Ordre</th><th>Rotation</th><th>Rester ensemble</th><th>Séparer</th><th>Tags</th><th>Incompatibles</th><th>Écart (mm)</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="add-row" class="secondary">+ Ajouter une ligne</button>
+        <button id="duplicate-row" class="secondary">Dupliquer la dernière</button>
+        <button id="optimize" class="primary">Optimiser le chargement</button>
+      </div>
+      <div id="data-errors" class="message error hidden"></div>
+    </section>
+
+    <section id="tab-results" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Comparaison</div>
+          <h2>Solutions de chargement</h2>
+        </div>
+        <div id="run-meta" class="run-meta"></div>
+      </div>
+      <div id="empty-results" class="empty-state">Lancez une optimisation pour faire apparaître les plans.</div>
+      <div id="results-content" class="hidden">
+        <div id="solution-cards" class="solution-cards"></div>
+        <div class="viewer-grid">
+          <div class="viewer-card">
+            <div class="viewer-toolbar">
+              <div><strong id="viewer-title">Plan 3D</strong><span id="viewer-subtitle"></span></div>
+              <div class="viewer-actions"><select id="viewer-vehicle" aria-label="Véhicule affiché"></select><button id="reset-view" class="secondary small">Réinitialiser la vue</button></div>
+            </div>
+            <canvas id="viewer" width="1000" height="620" aria-label="Visualisation 3D du chargement"></canvas>
+            <div class="viewer-help">Glisser pour tourner · cliquer sur un objet pour l’inspecter</div>
+          </div>
+          <aside class="inspection-card">
+            <h3>Inspection</h3>
+            <div id="inspection">Cliquez sur un objet dans la scène.</div>
+            <h3>Diagnostics</h3>
+            <div id="diagnostics"></div>
+            <h3>Exports opérationnels</h3>
+            <div id="exports" class="export-links"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="panel tab-panel">
+      <div class="panel-heading">
+        <div><div class="eyebrow">Traçabilité</div><h2>Historique des calculs</h2></div>
+        <button id="refresh-history" class="secondary">Actualiser</button>
+      </div>
+      <div id="history-list" class="history-list"></div>
+    </section>
+  </main>
+
+  <footer>Les dimensions doivent être validées sur les fiches techniques, cartes grises et carrosseries réellement utilisées.</footer>
+  <script>window.PLO_VEHICLES = {{ vehicles | tojson }};</script>
+  <script src="/static/app.js?v={{ app_version }}"></script>
+</body>
+</html>

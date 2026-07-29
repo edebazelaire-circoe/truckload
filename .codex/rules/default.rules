@@ -1,0 +1,55 @@
+prefix_rule(
+    pattern = ["Select-Object"],
+    decision = "allow",
+    justification = "Autoriser Select-Object pour les projections PowerShell.",
+    match = [
+        "Select-Object Name",
+        "Select-Object Name,Length",
+        "Select-Object -First 20",
+    ],
+    not_match = [],
+)
+
+prefix_rule(
+    pattern = ["Where-Object"],
+    decision = "allow",
+    justification = "Autoriser Where-Object pour le filtrage PowerShell.",
+    match = [
+        "Where-Object { $_.Name -like '*.py' }",
+        "Where-Object { -not $_.PSIsContainer }",
+    ],
+    not_match = [],
+)
+
+prefix_rule(
+    pattern = ["Sort-Object"],
+    decision = "allow",
+    justification = "Autoriser Sort-Object pour le tri PowerShell.",
+    match = [
+        "Sort-Object Name",
+        "Sort-Object LastWriteTime",
+    ],
+    not_match = [],
+)
+
+prefix_rule(
+    pattern = ["ForEach-Object"],
+    decision = "allow",
+    justification = "Autoriser ForEach-Object pour les transformations PowerShell.",
+    match = [
+        "ForEach-Object { $_.Name }",
+        "ForEach-Object { $_.FullName }",
+    ],
+    not_match = [],
+)
+
+prefix_rule(
+    pattern = ["Measure-Object"],
+    decision = "allow",
+    justification = "Autoriser Measure-Object pour les mesures PowerShell.",
+    match = [
+        "Measure-Object",
+        "Measure-Object Length -Sum",
+    ],
+    not_match = [],
+)
