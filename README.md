@@ -11,7 +11,7 @@ L’onglet **0. Véhicules** permet de créer ou modifier les caractéristiques 
 - charge utile;
 - largeur et hauteur de l’ouverture arrière.
 
-Les véhicules sont enregistrés dans la base de l’entreprise. Chaque modification crée une nouvelle version et les calculs suivants utilisent immédiatement ces dimensions.
+Les véhicules sont enregistrés dans l’espace local `demo`. L’interface web ne demande aucune clé API. Chaque modification crée une nouvelle version et les calculs suivants utilisent immédiatement ces dimensions.
 
 ## Démarrage local
 
@@ -24,14 +24,14 @@ Ouvrir ensuite `http://127.0.0.1:8000`.
 
 ## API
 
-Créer une entreprise et une clé, puis appeler l’API:
+La clé API concerne uniquement les intégrations qui appellent l’API publique. Créer une entreprise et une clé, puis appeler l’API:
 
 ```bash
 pallet-optimizer --data-dir data create-tenant circoe "CIRCOE"
 pallet-optimizer --data-dir data issue-api-key circoe --label integration
 ```
 
-`POST /v1/optimizations` avec l’en-tête `X-API-Key`. L’API retourne uniquement la meilleure solution. L’interface interactive peut en présenter jusqu’à cinq.
+`POST /v1/optimizations` avec l’en-tête `X-API-Key`. L’API retourne uniquement la meilleure solution. L’interface interactive, indépendante de cette clé, peut en présenter jusqu’à cinq.
 
 ## Tests
 
@@ -56,6 +56,6 @@ Le même conteneur est utilisable en SaaS ou en installation dédiée. Seuls le 
 - Aucun gerbage et aucune manipulation manuelle du plan 3D.
 - Le modèle d’essieux reste simplifié et doit être validé selon le véhicule réel.
 - Recherche heuristique déterministe, sans garantie d’optimalité mathématique.
-- Authentification utilisateur disponible dans la couche de données et la CLI; l’interface web livrée reste un démonstrateur local.
+- Authentification utilisateur disponible dans la couche de données et la CLI; l’interface web livrée reste un démonstrateur local et ne doit pas être exposée telle quelle sur Internet.
 
 Les références et le détail algorithmique sont décrits dans `docs/optimization-methods.md`.
