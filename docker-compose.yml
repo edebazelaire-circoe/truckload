@@ -5,7 +5,7 @@ services:
       - "8000:8000"
     environment:
       PLO_DATA_DIR: /app/data
-      PLO_DEMO_MODE: "0"
+      PLO_DEMO_MODE: "${PLO_DEMO_MODE:-1}"
     volumes:
       - plo_data:/app/data
     restart: unless-stopped
