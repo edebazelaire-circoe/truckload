@@ -1,6 +1,6 @@
 # Pallet Loading Optimizer
 
-V2 exécutable d’un optimiseur de chargement pour palettes et colis non gerbables. Le système recherche des plans de rangement à l’aide d’un portefeuille **MaxRects + points extrêmes**, minimise d’abord le nombre de véhicules puis la longueur réellement occupée, et applique comme contraintes dures la géométrie, les ouvertures, les obstacles, le poids, les essieux, le LIFO et les incompatibilités.
+V2 exécutable d’un optimiseur de chargement pour palettes et colis. Le système recherche des plans de rangement à l’aide d’un portefeuille **MaxRects + points extrêmes**, minimise d’abord le nombre de véhicules puis la longueur réellement occupée, et applique comme contraintes dures la géométrie, les ouvertures, les obstacles, le poids, les essieux, le LIFO et les incompatibilités.
 
 ## Écran 0: catalogue véhicules
 
@@ -12,6 +12,10 @@ L’onglet **0. Véhicules** permet de créer ou modifier les caractéristiques 
 - largeur et hauteur de l’ouverture arrière.
 
 Les véhicules sont enregistrés dans l’espace local `demo`. L’interface web ne demande aucune clé API. Chaque modification crée une nouvelle version et les calculs suivants utilisent immédiatement ces dimensions.
+
+## Préparation du chargement
+
+L’onglet **1. Données** permet d’autoriser l’empilage. Lorsque l’option est activée, seules les palettes strictement compatibles — mêmes dimensions, poids, destination, ordre et contraintes — peuvent partager la même emprise au sol. Le moteur conserve toujours la hauteur sur l’axe vertical: les seules rotations possibles sont 0° et 90° sur le plan longueur × largeur.
 
 ## Démarrage local
 
@@ -41,7 +45,7 @@ PYTHONPATH=src python scripts/smoke_test.py
 PYTHONPATH=src python scripts/ui_e2e.py
 ```
 
-La suite couvre notamment le cas remonté de trois palettes 1200 × 800 mm, la prise en compte d’une largeur véhicule modifiée, les bornes géométriques, le LIFO, les essieux, le multi-véhicules, l’isolation par base, les clés API, les exports et un cas de 100 objets.
+La suite couvre notamment le cas remonté de trois palettes 1200 × 800 mm, la prise en compte d’une largeur véhicule modifiée, les bornes géométriques, le LIFO, les essieux, le multi-véhicules, l’isolation par base, les clés API, les exports, l’empilage et un cas de 100 objets.
 
 ## Déploiement
 
@@ -53,7 +57,8 @@ Le même conteneur est utilisable en SaaS ou en installation dédiée. Seuls le 
 
 ## Limites explicites
 
-- Aucun gerbage et aucune manipulation manuelle du plan 3D.
+- L’empilage est géométrique et limité aux palettes strictement compatibles; il ne modélise pas la charge admissible ni la résistance de la palette inférieure.
+- Aucune manipulation manuelle du plan 3D.
 - Le modèle d’essieux reste simplifié et doit être validé selon le véhicule réel.
 - Recherche heuristique déterministe, sans garantie d’optimalité mathématique.
 - Authentification utilisateur disponible dans la couche de données et la CLI; l’interface web livrée reste un démonstrateur local et ne doit pas être exposée telle quelle sur Internet.
