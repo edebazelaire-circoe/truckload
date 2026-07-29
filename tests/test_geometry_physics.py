@@ -13,19 +13,25 @@ def item(item_id: str, *, order: int = 1, rotation: bool = True, weight: float =
                      rotation_allowed=rotation, margins=Margins(), zone=zone)
 
 
-def placement(i: CargoItem, x: int, y: int, orientation: int = 0) -> Placement:
+def placement(i: CargoItem, x: int, y: int, orientation: int = 0, z: int = 0) -> Placement:
     al, aw, el, ew = i.oriented_dimensions(orientation)
-    return Placement(i.id, i.source_id, i.destination, i.delivery_order, x, y, 0, orientation,
+    return Placement(i.id, i.source_id, i.destination, i.delivery_order, x, y, z, orientation,
                      al, aw, i.height_mm, el, ew, i.weight_kg)
 
 
-def test_collision_bounds_and_floor_are_rejected(simple_vehicle) -> None:
+def test_collision_bounds_and_unsupported_stack_are_rejected(simple_vehicle) -> None:
     a, b = item("A"), item("B")
     diagnostics = validate_geometry(simple_vehicle, (placement(a, 0, 0), placement(b, 100, 100)), {"A": a, "B": b})
     assert "ITEM_COLLISION" in {d.code for d in diagnostics}
     bad = Placement("A", "A", "A", 1, 3500, 0, 1, 0, 1200, 800, 1000, 1200, 800, 100)
     diagnostics = validate_geometry(simple_vehicle, (bad,), {"A": a})
-    assert {"OUT_OF_BOUNDS", "NOT_ON_FLOOR"} <= {d.code for d in diagnostics}
+    assert {"OUT_OF_BOUNDS", "UNSUPPORTED_STACK"} <= {d.code for d in diagnostics}
+
+
+def test_supported_vertical_stack_is_valid(simple_vehicle) -> None:
+    a, b = item("A"), item("B")
+    placements = (placement(a, 0, 0), placement(b, 0, 0, z=1000))
+    assert validate_geometry(simple_vehicle, placements, {"A": a, "B": b}) == ()
 
 
 def test_obstacle_and_zone_are_hard_constraints(simple_vehicle) -> None:
