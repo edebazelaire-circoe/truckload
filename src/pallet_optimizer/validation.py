@@ -15,6 +15,15 @@ def rectangles_overlap(a: Placement, b: Placement, extra_gap_mm: int = 0) -> boo
     )
 
 
+def volumes_overlap(a: Placement, b: Placement, extra_gap_mm: int = 0) -> bool:
+    if not rectangles_overlap(a, b, extra_gap_mm):
+        return False
+    return not (
+        a.z_mm + a.actual_height_mm <= b.z_mm
+        or b.z_mm + b.actual_height_mm <= a.z_mm
+    )
+
+
 def placement_overlaps_rect(p: Placement, x: int, y: int, width: int, length: int) -> bool:
     return not (
         p.x_mm + p.envelope_width_mm <= x
@@ -24,20 +33,43 @@ def placement_overlaps_rect(p: Placement, x: int, y: int, width: int, length: in
     )
 
 
+def _is_fully_supported(placement: Placement, placements: tuple[Placement, ...]) -> bool:
+    if placement.z_mm == 0:
+        return True
+    for support in placements:
+        if support.item_id == placement.item_id:
+            continue
+        if support.z_mm + support.actual_height_mm != placement.z_mm:
+            continue
+        if (
+            placement.x_mm >= support.x_mm
+            and placement.y_mm >= support.y_mm
+            and placement.x_mm + placement.envelope_width_mm <= support.x_mm + support.envelope_width_mm
+            and placement.y_mm + placement.envelope_length_mm <= support.y_mm + support.envelope_length_mm
+        ):
+            return True
+    return False
+
+
 def validate_geometry(vehicle: VehicleVersion, placements: tuple[Placement, ...], items: dict[str, CargoItem]) -> tuple[Diagnostic, ...]:
     diagnostics: list[Diagnostic] = []
     for p in placements:
         item = items[p.item_id]
-        if p.z_mm != 0:
-            diagnostics.append(Diagnostic("NOT_ON_FLOOR", f"{p.item_id} ne repose pas sur le plancher", field_path=p.item_id))
-        if p.x_mm < 0 or p.y_mm < 0 or p.x_mm + p.envelope_width_mm > vehicle.interior_width_mm or p.y_mm + p.envelope_length_mm > vehicle.interior_length_mm:
-            diagnostics.append(Diagnostic("OUT_OF_BOUNDS", f"{p.item_id} dépasse les limites du plancher du véhicule", field_path=p.item_id))
-        if p.actual_height_mm + item.margins.top_mm > vehicle.interior_height_mm:
+        if (
+            p.x_mm < 0
+            or p.y_mm < 0
+            or p.z_mm < 0
+            or p.x_mm + p.envelope_width_mm > vehicle.interior_width_mm
+            or p.y_mm + p.envelope_length_mm > vehicle.interior_length_mm
+        ):
+            diagnostics.append(Diagnostic("OUT_OF_BOUNDS", f"{p.item_id} dépasse les limites du véhicule", field_path=p.item_id))
+        if p.z_mm + p.actual_height_mm + item.margins.top_mm > vehicle.interior_height_mm:
             diagnostics.append(Diagnostic("HEIGHT_EXCEEDED", f"{p.item_id} dépasse la hauteur intérieure", field_path=p.item_id))
         if p.envelope_width_mm > vehicle.door_width_mm or p.actual_height_mm + item.margins.top_mm > vehicle.door_height_mm:
             diagnostics.append(Diagnostic("OPENING_TOO_SMALL", f"{p.item_id} ne peut pas franchir l’ouverture arrière", field_path=p.item_id))
         for obstacle in vehicle.obstacles:
-            if placement_overlaps_rect(p, obstacle.x_mm, obstacle.y_mm, obstacle.width_mm, obstacle.length_mm):
+            vertical_overlap = p.z_mm < obstacle.height_mm and p.z_mm + p.actual_height_mm > 0
+            if vertical_overlap and placement_overlaps_rect(p, obstacle.x_mm, obstacle.y_mm, obstacle.width_mm, obstacle.length_mm):
                 diagnostics.append(Diagnostic("OBSTACLE_COLLISION", f"{p.item_id} entre en collision avec {obstacle.id}", field_path=p.item_id,
                                               details={"obstacle": obstacle.id}))
         if item.zone:
@@ -48,10 +80,12 @@ def validate_geometry(vehicle: VehicleVersion, placements: tuple[Placement, ...]
                       and p.x_mm + p.envelope_width_mm <= zone.rect.x_mm + zone.rect.width_mm
                       and p.y_mm + p.envelope_length_mm <= zone.rect.y_mm + zone.rect.length_mm):
                 diagnostics.append(Diagnostic("ZONE_VIOLATION", f"{p.item_id} se trouve hors de la zone imposée {item.zone}", field_path=p.item_id))
+        if not _is_fully_supported(p, placements):
+            diagnostics.append(Diagnostic("UNSUPPORTED_STACK", f"{p.item_id} ne repose pas entièrement sur une palette inférieure", field_path=p.item_id))
     for i, a in enumerate(placements):
         for b in placements[i + 1:]:
             gap = max(items[a.item_id].separation_mm, items[b.item_id].separation_mm)
-            if rectangles_overlap(a, b, gap):
+            if volumes_overlap(a, b, gap):
                 diagnostics.append(Diagnostic("ITEM_COLLISION", f"{a.item_id} chevauche ou ne respecte pas l’écart avec {b.item_id}",
                                               details={"items": [a.item_id, b.item_id], "gap_mm": gap}))
     return tuple(diagnostics)
