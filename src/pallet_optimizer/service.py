@@ -22,6 +22,17 @@ def _is_enabled(value: Any) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "oui", "y", "o"}
 
 
+def _can_stack(item: CargoItem) -> bool:
+    self_conflict = bool(set(item.compatibility_tags) & set(item.incompatible_tags))
+    return (
+        item.shape == Shape.PALLET
+        and item.separate_group is None
+        and item.separation_mm == 0
+        and item.margins.top_mm == 0
+        and not self_conflict
+    )
+
+
 def _stack_key(item: CargoItem) -> tuple[Any, ...]:
     """Only strictly compatible pallets may share the same floor footprint."""
     return (
@@ -36,7 +47,6 @@ def _stack_key(item: CargoItem) -> tuple[Any, ...]:
         item.compatibility_tags,
         item.incompatible_tags,
         item.keep_together_group,
-        item.separate_group,
         item.separation_mm,
         item.zone,
     )
@@ -58,7 +68,7 @@ def _collapse_stacks(
     groups: dict[tuple[Any, ...], list[CargoItem]] = defaultdict(list)
     collapsed: list[CargoItem] = []
     for item in problem.items:
-        if item.shape == Shape.PALLET:
+        if _can_stack(item):
             groups[_stack_key(item)].append(item)
         else:
             collapsed.append(item)
